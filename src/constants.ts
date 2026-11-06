@@ -1,65 +1,46 @@
-// Scene constants: geometry, colors and canvas settings. main.ts holds the WebGL code and the game loop.
+// Constantes de la escena: colores, medidas de la torreta/cañón y ajustes de jugabilidad.
+// Las mallas, el render y el loop del juego están en main.ts.
 
-/** Background color #1b1e2b as linear floats in [0, 1]. */
-export const CLEAR_COLOR: readonly [number, number, number, number] = [0x1b / 255, 0x1e / 255, 0x2b / 255, 1];
+export type Color = readonly [number, number, number, number];
 
-/** Drawing buffer size in pixels, 4:3. CSS scales the canvas to fit the window; the buffer stays fixed. */
-export const CANVAS_WIDTH = 1024;
-export const CANVAS_HEIGHT = 768;
+// Tamaño del canvas en píxeles
+export const ANCHO_CANVAS = 1024;
+export const ALTO_CANVAS = 768;
 
-/** Cube colors, RGBA. Space cycles through them in this order. */
-export const COLORS: readonly (readonly [number, number, number, number])[] = [
-  [0, 1, 1, 1], // cyan
-  [1, 0, 1, 1], // magenta
-  [1, 1, 0, 1], // yellow
-];
+export const PASO_BYTES = 6 * 4; // 4 bytes por float
+export const DESPLAZAMIENTO_NORMAL_BYTES = 3 * 4;
 
-// 24 vertices (4 per face), not 8 corners. A corner is shared by 3 faces, but a vertex holds
-// only one normal. Each face needs its own normal for flat lighting, so each face gets its own 4 vertices.
-/** Interleaved vertex data: x, y, z, nx, ny, nz per vertex. Half-size 0.5, counter-clockwise seen from outside. */
-export const CUBE_VERTICES = new Float32Array([
-  //   x      y      z    nx  ny  nz
-  // +Z face (front)
-  -0.5, -0.5,  0.5,   0,  0,  1, // bottom left
-   0.5, -0.5,  0.5,   0,  0,  1, // bottom right
-   0.5,  0.5,  0.5,   0,  0,  1, // top right
-  -0.5,  0.5,  0.5,   0,  0,  1, // top left
-  // -Z face (back)
-   0.5, -0.5, -0.5,   0,  0, -1,
-  -0.5, -0.5, -0.5,   0,  0, -1,
-  -0.5,  0.5, -0.5,   0,  0, -1,
-   0.5,  0.5, -0.5,   0,  0, -1,
-  // +X face (right)
-   0.5, -0.5,  0.5,   1,  0,  0,
-   0.5, -0.5, -0.5,   1,  0,  0,
-   0.5,  0.5, -0.5,   1,  0,  0,
-   0.5,  0.5,  0.5,   1,  0,  0,
-  // -X face (left)
-  -0.5, -0.5, -0.5,  -1,  0,  0,
-  -0.5, -0.5,  0.5,  -1,  0,  0,
-  -0.5,  0.5,  0.5,  -1,  0,  0,
-  -0.5,  0.5, -0.5,  -1,  0,  0,
-  // +Y face (top)
-  -0.5,  0.5,  0.5,   0,  1,  0,
-   0.5,  0.5,  0.5,   0,  1,  0,
-   0.5,  0.5, -0.5,   0,  1,  0,
-  -0.5,  0.5, -0.5,   0,  1,  0,
-  // -Y face (bottom)
-  -0.5, -0.5, -0.5,   0, -1,  0,
-   0.5, -0.5, -0.5,   0, -1,  0,
-   0.5, -0.5,  0.5,   0, -1,  0,
-  -0.5, -0.5,  0.5,   0, -1,  0,
-]);
+// Colores de la escena.
+export const COLOR_CIELO: Color = [0.35, 0.65, 0.9, 1];
+export const COLOR_SUELO: Color = [0.36, 0.2, 0.09, 1];
+export const COLOR_CASCO: Color = [0.17, 0.19, 0.21, 1];
+export const COLOR_CABINA: Color = [0.24, 0.26, 0.29, 1];
+export const COLOR_CANON: Color = [0.11, 0.12, 0.14, 1];
+export const COLOR_ORUGA: Color = [0.07, 0.08, 0.09, 1];
+export const BARRA_ACTIVA: Color = [0.25, 0.8, 0.2, 1];
+export const BARRA_INACTIVA: Color = [0.05, 0.22, 0.07, 1];
+export const COLOR_PROYECTIL: Color = [0.015, 0.015, 0.015, 1];
+export const COLOR_OBJETIVO: Color = [0.9, 0.18, 0.05, 1];
+export const COLOR_TRAYECTORIA: Color = [0.85, 0.95, 0.35, 1];
 
-/** Two triangles per face, 36 indices. Each face: (0, 1, 2) and (0, 2, 3), both counter-clockwise. */
-export const CUBE_INDICES = new Uint16Array([
-   0,  1,  2,   0,  2,  3, // +Z
-   4,  5,  6,   4,  6,  7, // -Z
-   8,  9, 10,   8, 10, 11, // +X
-  12, 13, 14,  12, 14, 15, // -X
-  16, 17, 18,  16, 18, 19, // +Y
-  20, 21, 22,  20, 22, 23, // -Y
-]);
+// Brillo metálico para el casco, la cabina y el cañón del tanque.
+export const BRILLO_METAL: Color = [0.4, 0.4, 0.44, 1];
+export const BRILLO_METAL_INTENSIDAD = 28;
 
-export const STRIDE_BYTES = 6 * 4; // 4 bytes per float (Float32)
-export const NORMAL_OFFSET_BYTES = 3 * 4;
+// Medidas de la torreta y el cañón, en unidades del mundo.
+export const LARGO_CANON = 2.2;
+export const BASE_CANON_Y = 1.45;
+export const BASE_CANON_Z = 3.8;
+export const RADIO_PROYECTIL = 0.18;
+
+// Ajustes de jugabilidad.
+export const LIMITE_TORRETA = 4; // Recorrido horizontal, +/- unidades
+export const ELEVACION_MINIMA_GRADOS = 5;
+export const ELEVACION_MAXIMA_GRADOS = 90;
+export const ELEVACION_INICIAL_GRADOS = 35;
+export const FUERZA_INICIAL = 2;
+export const VELOCIDAD_HORIZONTAL = 3.2; // Unidades por segundo
+export const VELOCIDAD_ANGULAR = 1.2; // Radianes por segundo
+export const VELOCIDADES_POR_FUERZA = [7, 10, 13] as const; // Velocidad de disparo según el nivel de fuerza (1, 2, 3)
+export const GRAVEDAD = 9.8;
+export const DT_MAXIMO = 0.1; // Si la pestaña estuvo en segundo plano, evita que la física pegue un salto
